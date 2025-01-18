@@ -78,7 +78,7 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	arguments := strings.Split(m.Content, " ")
 	if len(arguments) < 2 {
-		_, err := s.ChannelMessageSend(m.ChannelID, "Skipping, no command sent")
+		_, err := s.ChannelMessageSend(m.ChannelID, "Se debe enviar un comando")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -88,11 +88,11 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	switch command {
 	case "season":
-		SendSeasonStats(Players, s, m)
+		SendStats(Players, arguments[1:], s, m)
 	case "playerlist":
 		SendSavedPlayers(Players, s, m)
 	case "saveplayer":
-		SavePlayer(arguments[2], s, m)
+		SavePlayer(arguments[1:], s, m)
 	default:
 		SendUnrecognizedCommandMessage(s, m)
 	}

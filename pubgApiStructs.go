@@ -1,12 +1,14 @@
 package main
 
 type StatsResponse struct {
-	Data []struct {
-		Attributes struct {
-			GameModeStats gameModeStats `json:"gameModeStats"`
-		} `json:"attributes"`
-		Relationships relationships `json:"relationships"`
-	} `json:"data"`
+	PlayerStatsList []PlayerStats `json:"data"`
+}
+
+type PlayerStats struct {
+	Attributes struct {
+		GameModeStats gameModeStats `json:"gameModeStats"`
+	} `json:"attributes"`
+	Relationships relationships `json:"relationships"`
 }
 
 type gameModeStats struct {

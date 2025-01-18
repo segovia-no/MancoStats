@@ -1,6 +1,9 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
 
 func GetIdsFromPlayerSlice(players []Player) []string {
 	var ids []string
@@ -25,4 +28,8 @@ func FindNameFromId(players []Player, id string) (string, error) {
 		}
 	}
 	return "", errors.New("Player not found")
+}
+
+func GetKDRatioFromPlayerStats(player PlayerStats) float64 {
+	return math.Round(float64(player.Attributes.GameModeStats.Squad.Kills)/float64(player.Attributes.GameModeStats.Squad.Losses)*100) / 100
 }

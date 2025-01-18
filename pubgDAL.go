@@ -6,37 +6,23 @@ import (
 	"strings"
 )
 
-func MultiplePlayerStats(players []Player, seasonId string, mode string) (string, error) {
+func MultiplePlayerStats(players []Player, seasonId string, mode GameMode) ([]PlayerStats, error) {
 	fmt.Println("Requesting PUBG stats")
 	PubgPlayerIds := GetIdsFromPlayerSlice(players)
 
-	reqUrl := PUBG_API_URL + "/seasons/" + seasonId + "/gameMode/" + mode + "/players?filter[playerIds]=" + strings.Join(PubgPlayerIds, ",")
+	reqUrl := PUBG_API_URL + "/seasons/" + seasonId + "/gameMode/" + string(mode) + "/players?filter[playerIds]=" + strings.Join(PubgPlayerIds, ",")
 
 	var respStats StatsResponse
 	err := PubgApiGET(reqUrl, &respStats)
 	if err != nil {
-		return "", err
+		return []PlayerStats{}, err
 	}
 
-	var discordResponseMsg string
-	for i := 0; i < len(respStats.Data); i++ {
-		currPlayerId := respStats.Data[i].Relationships.Player.Data.ID
-		playerName, err := FindNameFromId(Players, currPlayerId)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		currStats := respStats.Data[i].Attributes.GameModeStats
-
-		kills := currStats.Squad.Kills
-		deaths := currStats.Squad.Losses
-		kd := float64(kills) / float64(deaths)
-
-		discordResponseMsg += fmt.Sprintf("%s: %f\n", playerName, kd)
+	if len(respStats.PlayerStatsList) < 1 {
+		return []PlayerStats{}, errors.New("no info returned")
 	}
 
-	return discordResponseMsg, nil
+	return respStats.PlayerStatsList, nil
 }
 
 func FindPlayerIdFromName(name string) (string, error) {
