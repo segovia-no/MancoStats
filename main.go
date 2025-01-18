@@ -17,7 +17,7 @@ var (
 	Players      PlayerList
 )
 
-const BOT_PREFIX = "pubgstats"
+const BOT_PREFIX = "!manco"
 const PUBG_API_URL = "https://api.pubg.com/shards/steam"
 
 func main() {
