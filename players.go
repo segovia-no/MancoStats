@@ -38,6 +38,10 @@ func (p PlayerList) ReadPlayersCSV(filename string) ([]Player, error) {
 }
 
 func (p *PlayerList) addPlayer(player Player) error {
+	if len(*p) >= 10 {
+		return errors.New("player list is full")
+	}
+
 	for _, existingPlayer := range *p {
 		if existingPlayer.ID == player.ID {
 			return errors.New("player already exists, skipping add")

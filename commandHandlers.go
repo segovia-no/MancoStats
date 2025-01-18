@@ -99,7 +99,7 @@ func SavePlayer(commandTail []string, s *discordgo.Session, m *discordgo.Message
 	})
 	if err != nil {
 		fmt.Println(err)
-		s.ChannelMessageSend(m.ChannelID, "No se pudo guardar la lista de jugadores")
+		s.ChannelMessageSend(m.ChannelID, "No se pudo guardar este jugador, ya estaba guardado o la lista esta llena")
 		return
 	}
 
