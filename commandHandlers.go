@@ -15,6 +15,14 @@ const (
 	Duo   GameMode = "duo"
 )
 
+func SendHelpMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+	msg := fmt.Sprintf("Comandos disponibles: \n  season squad \n  playerlist \n  saveplayer [nombre] \n")
+	_, err := s.ChannelMessageSend(m.ChannelID, msg)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
 func SendStats(players PlayerList, commandTail []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(commandTail) != 2 {
 		_, err := s.ChannelMessageSend(m.ChannelID, "Cantidad de argumentos incorrecta")

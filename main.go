@@ -87,6 +87,8 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := arguments[1]
 
 	switch command {
+	case "help":
+		SendHelpMessage(s, m)
 	case "season":
 		SendStats(Players, arguments[1:], s, m)
 	case "playerlist":
