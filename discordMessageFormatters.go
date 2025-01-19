@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func FormatPlayerStatsAsEmbedDiscordMessage(playerListStats []PlayerStats, gameModeStr string) (*discordgo.MessageEmbed, error) {
+func FormatPlayerStatsAsEmbedDiscordMessage(playerListStats []PlayerStats, Players []Player, gameModeStr string) (*discordgo.MessageEmbed, error) {
 	slices.SortFunc(playerListStats,
 		func(a, b PlayerStats) int {
 			return cmp.Compare(GetKDRatioFromPlayerStats(b), GetKDRatioFromPlayerStats(a))
@@ -20,8 +20,18 @@ func FormatPlayerStatsAsEmbedDiscordMessage(playerListStats []PlayerStats, gameM
 
 	// player name column
 	var playerNameSlice []string
-	for _, player := range playerListStats {
+	for i, player := range playerListStats {
 		playerName, err := FindNameFromId(Players, player.Relationships.Player.Data.ID)
+
+		switch i {
+		case 0:
+			playerName = "🥇" + playerName
+		case 1:
+			playerName = "🥈" + playerName
+		case 2:
+			playerName = "🥉" + playerName
+		}
+
 		if err != nil {
 			fmt.Println(err)
 			return &discordgo.MessageEmbed{}, err

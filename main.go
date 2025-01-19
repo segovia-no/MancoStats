@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
@@ -14,7 +15,7 @@ import (
 var (
 	DiscordToken string
 	PubgApiToken string
-	Players      PlayerList
+	Servers      []ServerPlayerList
 )
 
 const BOT_PREFIX = "!manco"
@@ -23,26 +24,14 @@ const PUBG_API_URL = "https://api.pubg.com/shards/steam"
 func main() {
 	log.Println("Manco Stats Bot Starting")
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	DiscordToken = os.Getenv("DISCORD_TOKEN")
-	if DiscordToken == "" {
-		log.Fatal("DISCORD_TOKEN not set")
-	}
-	PubgApiToken = os.Getenv("PUBG_API_TOKEN")
-	if PubgApiToken == "" {
-		log.Fatal("PUBG_API_TOKEN not set")
-	}
-
-	Players, err = Players.ReadPlayersCSV("players.csv")
+	err := loadTokens()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(Players) < 1 {
-		log.Println("[WARN] No players loaded from CSV")
+
+	err = LoadServerCSVs(&Servers)
+	if err != nil {
+		fmt.Println("[WARN] Couldn't load servers: " + err.Error())
 	}
 
 	discordClient, err := discordgo.New("Bot " + DiscordToken)
@@ -50,9 +39,10 @@ func main() {
 		log.Fatalf("Error creating Discord session: %v", err)
 	}
 
-	discordClient.AddHandler(messageCreateHandler)
 	discordClient.Identify.Intents = discordgo.IntentsGuildMessages
 	discordClient.Identify.Intents |= discordgo.IntentMessageContent
+
+	discordClient.AddHandler(messageCreateHandler)
 
 	err = discordClient.Open()
 	if err != nil {
@@ -84,18 +74,44 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	command := arguments[1]
+	srvIdx, err := GetServerIndex(m.GuildID, &Servers)
+	if err != nil {
+		fmt.Println(err)
+		_, err = s.ChannelMessageSend(m.ChannelID, "No se pudo encontrar el servidor")
+		return
+	}
 
+	command := arguments[1]
 	switch command {
 	case "help":
 		SendHelpMessage(s, m)
 	case "season":
-		SendStats(Players, arguments[1:], s, m)
+		SendStats(Servers[srvIdx].PlayerList, arguments[1:], s, m)
 	case "playerlist":
-		SendSavedPlayers(Players, s, m)
+		SendSavedPlayers(Servers[srvIdx].PlayerList, s, m)
 	case "saveplayer":
-		SavePlayer(arguments[1:], s, m)
+		SavePlayer(arguments[1:], &Servers[srvIdx], s, m)
+	case "removeplayer":
+		RemovePlayer(arguments[1:], &Servers[srvIdx], s, m)
 	default:
 		SendUnrecognizedCommandMessage(s, m)
 	}
+}
+
+func loadTokens() error {
+	err := godotenv.Load()
+	if err != nil {
+		return errors.New("error loading .env file")
+	}
+
+	DiscordToken = os.Getenv("DISCORD_TOKEN")
+	if DiscordToken == "" {
+		return errors.New("DISCORD_TOKEN not set")
+	}
+	PubgApiToken = os.Getenv("PUBG_API_TOKEN")
+	if PubgApiToken == "" {
+		return errors.New("PUBG_API_TOKEN not set")
+	}
+
+	return nil
 }

@@ -49,7 +49,7 @@ func SendStats(players PlayerList, commandTail []string, s *discordgo.Session, m
 		return
 	}
 
-	embed, err := FormatPlayerStatsAsEmbedDiscordMessage(playerListStats, gameModeStr)
+	embed, err := FormatPlayerStatsAsEmbedDiscordMessage(playerListStats, players, gameModeStr)
 	if err != nil {
 		fmt.Println(err)
 		s.ChannelMessageSend(m.ChannelID, "Un error ha ocurrido con el formato de Discord")
@@ -74,7 +74,7 @@ func SendSavedPlayers(playerList PlayerList, s *discordgo.Session, m *discordgo.
 	}
 }
 
-func SavePlayer(commandTail []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func SavePlayer(commandTail []string, serverPlayerList *ServerPlayerList, s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(commandTail) != 2 {
 		_, err := s.ChannelMessageSend(m.ChannelID, "Cantidad de argumentos incorrecta")
 		if err != nil {
@@ -101,7 +101,7 @@ func SavePlayer(commandTail []string, s *discordgo.Session, m *discordgo.Message
 		return
 	}
 
-	err = Players.addPlayer(Player{
+	err = serverPlayerList.addPlayer(Player{
 		ID:   playerId,
 		Name: playerName,
 	})
@@ -111,14 +111,40 @@ func SavePlayer(commandTail []string, s *discordgo.Session, m *discordgo.Message
 		return
 	}
 
-	err = Players.OverwritePlayersCSV("players.csv", Players)
+	_, err = s.ChannelMessageSend(m.ChannelID, "Jugador guardado: "+playerName)
 	if err != nil {
 		fmt.Println(err)
-		s.ChannelMessageSend(m.ChannelID, "No se pudo guardar la lista de jugadores en el CSV")
+	}
+}
+
+func RemovePlayer(commandTail []string, serverPlayerList *ServerPlayerList, s *discordgo.Session, m *discordgo.MessageCreate) {
+	if len(commandTail) != 2 {
+		_, err := s.ChannelMessageSend(m.ChannelID, "Cantidad de argumentos incorrecta")
+		if err != nil {
+			fmt.Println(err)
+		}
 		return
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Jugador guardado: "+playerName)
+	playerName := commandTail[1]
+	if playerName == "" {
+		_, err := s.ChannelMessageSend(m.ChannelID, "No se puede eliminar un jugador sin el nombre")
+		if err != nil {
+			fmt.Println(err)
+		}
+		return
+	}
+
+	err := serverPlayerList.removePlayer(Player{
+		Name: playerName,
+	})
+	if err != nil {
+		fmt.Println(err)
+		s.ChannelMessageSend(m.ChannelID, "No se pudo eliminar este jugador, no estaba guardado")
+		return
+	}
+
+	_, err = s.ChannelMessageSend(m.ChannelID, "Jugador eliminado: "+playerName)
 	if err != nil {
 		fmt.Println(err)
 	}
