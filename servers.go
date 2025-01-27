@@ -102,8 +102,8 @@ func (sp *ServerPlayerList) loadPlayers() error {
 }
 
 func (sp *ServerPlayerList) addPlayer(player Player) error {
-	if len(sp.PlayerList) >= 10 {
-		return errors.New("player list is full")
+	if player.Name == "" {
+		return errors.New("player name not set")
 	}
 
 	for _, existingPlayer := range sp.PlayerList {
