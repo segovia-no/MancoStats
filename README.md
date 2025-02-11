@@ -10,6 +10,7 @@ Create a `.env` file with the following variables:
 
 - `DISCORD_TOKEN`: Your Discord bot token
 - `PUBG_API_TOKEN`: Your PUBG API key
+- `BOT_PREFIX`: The prefix you must use to invoke the bot on Discord, if not specified it will default to `!manco`
 
 ## Build
 
@@ -28,3 +29,8 @@ Run the binary to start the bot:
 ```
 
 The bot will connect to Discord and listen for commands. Use `!manco help` to get a list of available commands.
+
+## Roadmap
+- More commands for stats
+- Auto-detect PUBG season
+- I18n system for commands and responses

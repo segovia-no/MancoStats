@@ -9,47 +9,108 @@ import (
 const CURRENT_SEASON_ID = "division.bro.official.pc-2018-33"
 
 type GameMode string
+type StatsType string
 
 const (
-	Squad GameMode = "squad"
-	Duo   GameMode = "duo"
+	Squad  GameMode  = "squad"
+	Duo    GameMode  = "duo"
+	All    StatsType = "all"
+	Weekly StatsType = "weekly"
 )
 
 func SendHelpMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	msg := fmt.Sprintf("Comandos disponibles: \n  season squad \n  playerlist \n  saveplayer [nombre] \n")
+	msg := fmt.Sprintf("Comandos disponibles: \n  season \n  semana \n  vicio \n  playerlist \n  saveplayer [nombre] \n")
 	_, err := s.ChannelMessageSend(m.ChannelID, msg)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func SendStats(players PlayerList, commandTail []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	if len(commandTail) != 2 {
-		_, err := s.ChannelMessageSend(m.ChannelID, "Cantidad de argumentos incorrecta")
-		if err != nil {
-			fmt.Println(err)
-		}
-		return
+type StatsCommandFlags struct {
+	Season    string
+	Mode      GameMode
+	StatsType StatsType
+}
+
+func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	flags := StatsCommandFlags{ // defaults
+		Season:    CURRENT_SEASON_ID,
+		Mode:      Squad,
+		StatsType: All,
 	}
 
-	gameModeStr := strings.ToLower(commandTail[1])
-	gameMode := GameMode(gameModeStr)
-	if !(gameMode == Duo) && !(gameMode == Squad) {
-		_, err := s.ChannelMessageSend(m.ChannelID, "Se debe enviar 'duo' o 'squad'")
-		if err != nil {
-			fmt.Println(err)
+	for i := 0; i < len(commandTail); i++ {
+		switch commandTail[i] {
+		case "squad":
+			flags.Mode = Squad
+		case "duo":
+			flags.Mode = Duo
+		case "all":
+			flags.StatsType = All
+		case "weekly", "semana":
+			flags.StatsType = Weekly
 		}
-		return
 	}
 
-	playerListStats, err := MultiplePlayerStats(players, CURRENT_SEASON_ID, gameMode)
+	playerListStats, err := MultiplePlayerStats(players, CURRENT_SEASON_ID, flags.Mode)
 	if err != nil {
 		fmt.Println(err)
 		s.ChannelMessageSend(m.ChannelID, "Un error ha ocurrido con la API de PUBG")
 		return
 	}
 
-	embed, err := FormatPlayerStatsAsEmbedDiscordMessage(playerListStats, players, gameModeStr)
+	var embed *discordgo.MessageEmbed
+	switch flags.StatsType {
+	case All:
+		embed, err = GenPlayerStatsEmbedDiscordMsg(
+			playerListStats,
+			players,
+			EmbedProps{
+				Title: fmt.Sprintf("Stats season %v", flags.Mode),
+				Color: 0xFF9900,
+			},
+			generalStatsColumns,
+		)
+	case Weekly:
+		embed, err = GenPlayerStatsEmbedDiscordMsg(
+			playerListStats,
+			players,
+			EmbedProps{
+				Title: fmt.Sprintf("Stats semanal %v", flags.Mode),
+				Color: 0x1E81B0,
+			},
+			weeklyStatsColumns,
+		)
+	}
+	if err != nil {
+		fmt.Println(err)
+		s.ChannelMessageSend(m.ChannelID, "Un error ha ocurrido con el formato de Discord")
+		return
+	}
+
+	_, err = s.ChannelMessageSendEmbed(m.ChannelID, embed)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func SendAddictionStats(players PlayerList, s *discordgo.Session, m *discordgo.MessageCreate) {
+	playerListStats, err := MultiplePlayerStats(players, CURRENT_SEASON_ID, Squad)
+	if err != nil {
+		fmt.Println(err)
+		s.ChannelMessageSend(m.ChannelID, "Un error ha ocurrido con la API de PUBG")
+		return
+	}
+
+	embed, err := GenPlayerStatsEmbedDiscordMsg(
+		playerListStats,
+		players,
+		EmbedProps{
+			Title: fmt.Sprintf("Stats vicio season %v", Squad),
+			Color: 0xA8233D,
+		},
+		addictionStatsColumns,
+	)
 	if err != nil {
 		fmt.Println(err)
 		s.ChannelMessageSend(m.ChannelID, "Un error ha ocurrido con el formato de Discord")

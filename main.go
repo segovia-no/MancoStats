@@ -16,9 +16,9 @@ var (
 	DiscordToken string
 	PubgApiToken string
 	Servers      []ServerPlayerList
+	BotPrefix    string
 )
 
-const BOT_PREFIX = "!manco"
 const PUBG_API_URL = "https://api.pubg.com/shards/steam"
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 		log.Fatalf("Error opening Discord connection: %v", err)
 	}
 
-	log.Println("Bot is now running.  Press CTRL-C to exit.")
+	log.Println("Bot is now running, bot prefix is: ", BotPrefix, " - Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
@@ -62,7 +62,7 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if !strings.HasPrefix(m.Content, BOT_PREFIX) {
+	if !strings.HasPrefix(m.Content, BotPrefix) {
 		return
 	}
 
@@ -85,8 +85,10 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	switch command {
 	case "help":
 		SendHelpMessage(s, m)
-	case "season":
-		SendStats(Servers[srvIdx].PlayerList, arguments[1:], s, m)
+	case "season", "weekly", "semana":
+		SendSeasonStats(Servers[srvIdx].PlayerList, arguments[1:], s, m)
+	case "addiction", "vicio":
+		SendAddictionStats(Servers[srvIdx].PlayerList, s, m)
 	case "playerlist":
 		SendSavedPlayers(Servers[srvIdx].PlayerList, s, m)
 	case "saveplayer":
@@ -111,6 +113,13 @@ func loadTokens() error {
 	PubgApiToken = os.Getenv("PUBG_API_TOKEN")
 	if PubgApiToken == "" {
 		return errors.New("PUBG_API_TOKEN not set")
+	}
+
+	readBotPrefix := os.Getenv("BOT_PREFIX")
+	if readBotPrefix == "" {
+		BotPrefix = "!manco"
+	} else {
+		BotPrefix = readBotPrefix
 	}
 
 	return nil
