@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const CURRENT_SEASON_ID = "division.bro.official.pc-2018-33"
+const CURRENT_SEASON_ID = "division.bro.official.pc-2018-34"
 
 type GameMode string
 type StatsType string

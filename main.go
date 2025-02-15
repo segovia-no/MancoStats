@@ -17,14 +17,16 @@ var (
 	PubgApiToken string
 	Servers      []ServerPlayerList
 	BotPrefix    string
+	PUBGApiURL   string
 )
 
-const PUBG_API_URL = "https://api.pubg.com/shards/steam"
+const DefaultPUBGApiURL = "https://api.pubg.com/shards/steam"
+const DefaultBotPrefix = "!manco"
 
 func main() {
 	log.Println("Manco Stats Bot Starting")
 
-	err := loadTokens()
+	err := loadEnvVars()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,7 +102,7 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func loadTokens() error {
+func loadEnvVars() error {
 	err := godotenv.Load()
 	if err != nil {
 		return errors.New("error loading .env file")
@@ -117,9 +119,16 @@ func loadTokens() error {
 
 	readBotPrefix := os.Getenv("BOT_PREFIX")
 	if readBotPrefix == "" {
-		BotPrefix = "!manco"
+		BotPrefix = DefaultBotPrefix
 	} else {
 		BotPrefix = readBotPrefix
+	}
+
+	readPUBGApiURL := os.Getenv("PUBG_API_URL")
+	if readPUBGApiURL == "" {
+		PUBGApiURL = DefaultPUBGApiURL
+	} else {
+		PUBGApiURL = readPUBGApiURL
 	}
 
 	return nil

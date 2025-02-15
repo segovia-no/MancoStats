@@ -10,6 +10,7 @@ Create a `.env` file with the following variables:
 
 - `DISCORD_TOKEN`: Your Discord bot token
 - `PUBG_API_TOKEN`: Your PUBG API key
+- `PUBG_API_URL`: The URL of the PUBG API, if not provided it will default to the official PUBG API
 - `BOT_PREFIX`: The prefix you must use to invoke the bot on Discord, if not specified it will default to `!manco`
 
 ## Build

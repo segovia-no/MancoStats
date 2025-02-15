@@ -17,7 +17,7 @@ func MultiplePlayerStats(players []Player, seasonId string, mode GameMode) ([]Pl
 			maxIdx = len(PubgPlayerIds)
 		}
 		currPlayerListIds := PubgPlayerIds[i*10 : maxIdx]
-		reqUrl := PUBG_API_URL + "/seasons/" + seasonId + "/gameMode/" + string(mode) + "/players?filter[playerIds]=" + strings.Join(currPlayerListIds, ",")
+		reqUrl := PUBGApiURL + "/seasons/" + seasonId + "/gameMode/" + string(mode) + "/players?filter[playerIds]=" + strings.Join(currPlayerListIds, ",")
 
 		var currRespStats StatsResponse
 		err := PubgApiGET(reqUrl, &currRespStats)
@@ -36,7 +36,7 @@ func MultiplePlayerStats(players []Player, seasonId string, mode GameMode) ([]Pl
 }
 
 func FindPlayerIdFromName(name string) (string, error) {
-	reqUrl := PUBG_API_URL + "/players?filter[playerNames]=" + name
+	reqUrl := PUBGApiURL + "/players?filter[playerNames]=" + name
 
 	var respPlayer PlayerResponse
 	err := PubgApiGET(reqUrl, &respPlayer)
