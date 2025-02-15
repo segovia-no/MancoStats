@@ -33,6 +33,12 @@ type StatsCommandFlags struct {
 }
 
 func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	if len(players) < 1 {
+		fmt.Println("[WARN] No players found for this server")
+		s.ChannelMessageSend(m.ChannelID, "Debes guardar jugadores primero para usar este comando")
+		return
+	}
+
 	flags := StatsCommandFlags{ // defaults
 		Season:    CURRENT_SEASON_ID,
 		Mode:      Squad,
@@ -95,6 +101,12 @@ func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Sess
 }
 
 func SendAddictionStats(players PlayerList, s *discordgo.Session, m *discordgo.MessageCreate) {
+	if len(players) < 1 {
+		fmt.Println("[WARN] No players found for this server")
+		s.ChannelMessageSend(m.ChannelID, "Debes guardar jugadores primero para usar este comando")
+		return
+	}
+
 	playerListStats, err := MultiplePlayerStats(players, CURRENT_SEASON_ID, Squad)
 	if err != nil {
 		fmt.Println(err)
