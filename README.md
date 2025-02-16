@@ -33,4 +33,5 @@ The bot will connect to Discord and listen for commands. Use `!manco help` to ge
 
 ## Roadmap
 - More commands for stats
-- I18n system for commands and responses
+- Serialize servers data into JSON to store server configurations
+- i18n for commands and responses
