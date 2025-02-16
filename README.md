@@ -33,5 +33,4 @@ The bot will connect to Discord and listen for commands. Use `!manco help` to ge
 
 ## Roadmap
 - More commands for stats
-- Auto-detect PUBG season
 - I18n system for commands and responses

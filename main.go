@@ -8,16 +8,18 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"pubgstats/pubgDAL"
 	"strings"
 	"syscall"
 )
 
 var (
 	DiscordToken string
-	PubgApiToken string
 	Servers      []ServerPlayerList
 	BotPrefix    string
-	PUBGApiURL   string
+	PubgDAL      *pubgDAL.PUBGApiDAL
+	pubgApiURL   string
+	pubgApiToken string
 )
 
 const DefaultPUBGApiURL = "https://api.pubg.com/shards/steam"
@@ -27,6 +29,11 @@ func main() {
 	log.Println("Manco Stats Bot Starting")
 
 	err := loadEnvVars()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	PubgDAL, err = pubgDAL.NewPUBGApiDAL(pubgApiURL, pubgApiToken)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,7 +94,7 @@ func messageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	switch command {
 	case "help":
 		SendHelpMessage(s, m)
-	case "season", "weekly", "semana":
+	case "stats", "season", "weekly", "semana":
 		SendSeasonStats(Servers[srvIdx].PlayerList, arguments[1:], s, m)
 	case "addiction", "vicio":
 		SendAddictionStats(Servers[srvIdx].PlayerList, s, m)
@@ -112,8 +119,8 @@ func loadEnvVars() error {
 	if DiscordToken == "" {
 		return errors.New("DISCORD_TOKEN not set")
 	}
-	PubgApiToken = os.Getenv("PUBG_API_TOKEN")
-	if PubgApiToken == "" {
+	pubgApiToken = os.Getenv("PUBG_API_TOKEN")
+	if pubgApiToken == "" {
 		return errors.New("PUBG_API_TOKEN not set")
 	}
 
@@ -126,9 +133,9 @@ func loadEnvVars() error {
 
 	readPUBGApiURL := os.Getenv("PUBG_API_URL")
 	if readPUBGApiURL == "" {
-		PUBGApiURL = DefaultPUBGApiURL
+		pubgApiURL = DefaultPUBGApiURL
 	} else {
-		PUBGApiURL = readPUBGApiURL
+		pubgApiURL = readPUBGApiURL
 	}
 
 	return nil

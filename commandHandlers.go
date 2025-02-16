@@ -3,17 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"pubgstats/pubgDAL"
 	"strings"
 )
 
-const CURRENT_SEASON_ID = "division.bro.official.pc-2018-34"
-
-type GameMode string
 type StatsType string
 
 const (
-	Squad  GameMode  = "squad"
-	Duo    GameMode  = "duo"
 	All    StatsType = "all"
 	Weekly StatsType = "weekly"
 )
@@ -28,11 +24,11 @@ func SendHelpMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 type StatsCommandFlags struct {
 	Season    string
-	Mode      GameMode
+	Mode      pubgDAL.GameMode
 	StatsType StatsType
 }
 
-func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func SendSeasonStats(players []pubgDAL.Player, commandTail []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(players) < 1 {
 		fmt.Println("[WARN] No players found for this server")
 		s.ChannelMessageSend(m.ChannelID, "Debes guardar jugadores primero para usar este comando")
@@ -40,25 +36,27 @@ func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Sess
 	}
 
 	flags := StatsCommandFlags{ // defaults
-		Season:    CURRENT_SEASON_ID,
-		Mode:      Squad,
+		Season:    PubgDAL.GetSeasonID(),
+		Mode:      pubgDAL.Squad,
 		StatsType: All,
 	}
 
 	for i := 0; i < len(commandTail); i++ {
 		switch commandTail[i] {
 		case "squad":
-			flags.Mode = Squad
+			flags.Mode = pubgDAL.Squad
 		case "duo":
-			flags.Mode = Duo
+			flags.Mode = pubgDAL.Duo
 		case "all":
 			flags.StatsType = All
 		case "weekly", "semana":
 			flags.StatsType = Weekly
+		case "lifetime", "total":
+			flags.Season = "lifetime"
 		}
 	}
 
-	playerListStats, err := MultiplePlayerStats(players, CURRENT_SEASON_ID, flags.Mode)
+	playersStats, err := PubgDAL.MultiplePlayerStats(players, flags.Season == "lifetime", flags.Mode)
 	if err != nil {
 		fmt.Println(err)
 		s.ChannelMessageSend(m.ChannelID, "Un error ha ocurrido con la API de PUBG")
@@ -69,8 +67,7 @@ func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Sess
 	switch flags.StatsType {
 	case All:
 		embed, err = GenPlayerStatsEmbedDiscordMsg(
-			playerListStats,
-			players,
+			playersStats,
 			EmbedProps{
 				Title: fmt.Sprintf("Stats season %v", flags.Mode),
 				Color: 0xFF9900,
@@ -79,8 +76,7 @@ func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Sess
 		)
 	case Weekly:
 		embed, err = GenPlayerStatsEmbedDiscordMsg(
-			playerListStats,
-			players,
+			playersStats,
 			EmbedProps{
 				Title: fmt.Sprintf("Stats semanal %v", flags.Mode),
 				Color: 0x1E81B0,
@@ -100,14 +96,14 @@ func SendSeasonStats(players PlayerList, commandTail []string, s *discordgo.Sess
 	}
 }
 
-func SendAddictionStats(players PlayerList, s *discordgo.Session, m *discordgo.MessageCreate) {
+func SendAddictionStats(players []pubgDAL.Player, s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(players) < 1 {
 		fmt.Println("[WARN] No players found for this server")
 		s.ChannelMessageSend(m.ChannelID, "Debes guardar jugadores primero para usar este comando")
 		return
 	}
 
-	playerListStats, err := MultiplePlayerStats(players, CURRENT_SEASON_ID, Squad)
+	playersStats, err := PubgDAL.MultiplePlayerStats(players, false, pubgDAL.Squad)
 	if err != nil {
 		fmt.Println(err)
 		s.ChannelMessageSend(m.ChannelID, "Un error ha ocurrido con la API de PUBG")
@@ -115,10 +111,9 @@ func SendAddictionStats(players PlayerList, s *discordgo.Session, m *discordgo.M
 	}
 
 	embed, err := GenPlayerStatsEmbedDiscordMsg(
-		playerListStats,
-		players,
+		playersStats,
 		EmbedProps{
-			Title: fmt.Sprintf("Stats vicio season %v", Squad),
+			Title: fmt.Sprintf("Stats vicio season %v", pubgDAL.Squad),
 			Color: 0xA8233D,
 		},
 		addictionStatsColumns,
@@ -135,7 +130,7 @@ func SendAddictionStats(players PlayerList, s *discordgo.Session, m *discordgo.M
 	}
 }
 
-func SendSavedPlayers(playerList PlayerList, s *discordgo.Session, m *discordgo.MessageCreate) {
+func SendSavedPlayers(playerList []pubgDAL.Player, s *discordgo.Session, m *discordgo.MessageCreate) {
 	playerNames := GetNamesFromPlayerSlice(playerList)
 
 	playerNamesMsg := fmt.Sprintf("%v Jugadores guardados \n --- \n", len(playerNames))
@@ -165,7 +160,7 @@ func SavePlayer(commandTail []string, serverPlayerList *ServerPlayerList, s *dis
 		return
 	}
 
-	playerId, err := FindPlayerIdFromName(playerName)
+	playerId, err := PubgDAL.FindPlayerIdFromName(playerName)
 	if err != nil {
 		_, err = s.ChannelMessageSend(m.ChannelID, "No se pudo encontrar el jugador "+playerName)
 		if err != nil {
@@ -174,7 +169,7 @@ func SavePlayer(commandTail []string, serverPlayerList *ServerPlayerList, s *dis
 		return
 	}
 
-	err = serverPlayerList.addPlayer(Player{
+	err = serverPlayerList.addPlayer(pubgDAL.Player{
 		ID:   playerId,
 		Name: playerName,
 	})
@@ -208,7 +203,7 @@ func RemovePlayer(commandTail []string, serverPlayerList *ServerPlayerList, s *d
 		return
 	}
 
-	err := serverPlayerList.removePlayer(Player{
+	err := serverPlayerList.removePlayer(pubgDAL.Player{
 		Name: playerName,
 	})
 	if err != nil {

@@ -7,18 +7,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"pubgstats/pubgDAL"
 )
 
 type ServerPlayerList struct {
 	ServerID   string
-	PlayerList PlayerList
-}
-
-type PlayerList []Player
-
-type Player struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	PlayerList []pubgDAL.Player
 }
 
 const ServersPath = "servers"
@@ -44,7 +38,7 @@ func GetServerIndex(serverID string, serversList *[]ServerPlayerList) (int, erro
 func CreateServer(serverID string, serversList *[]ServerPlayerList) (int, error) {
 	var newServer = ServerPlayerList{
 		ServerID:   serverID,
-		PlayerList: PlayerList{},
+		PlayerList: []pubgDAL.Player{},
 	}
 
 	err := overwritePlayersCSV(serverID+CsvSuffix, newServer.PlayerList)
@@ -101,7 +95,7 @@ func (sp *ServerPlayerList) loadPlayers() error {
 	return nil
 }
 
-func (sp *ServerPlayerList) addPlayer(player Player) error {
+func (sp *ServerPlayerList) addPlayer(player pubgDAL.Player) error {
 	if player.Name == "" {
 		return errors.New("player name not set")
 	}
@@ -121,7 +115,7 @@ func (sp *ServerPlayerList) addPlayer(player Player) error {
 	return nil
 }
 
-func (sp *ServerPlayerList) removePlayer(player Player) error {
+func (sp *ServerPlayerList) removePlayer(player pubgDAL.Player) error {
 	for i, existingPlayer := range sp.PlayerList {
 		if player.Name == existingPlayer.Name {
 			sp.PlayerList = append((sp.PlayerList)[:i], (sp.PlayerList)[i+1:]...)
@@ -135,7 +129,7 @@ func (sp *ServerPlayerList) removePlayer(player Player) error {
 	return errors.New("player not found")
 }
 
-func readPlayersCSV(filename string) ([]Player, error) {
+func readPlayersCSV(filename string) ([]pubgDAL.Player, error) {
 	fullFilePath := filepath.Join(ServersPath, filename)
 
 	file, err := os.Open(fullFilePath)
@@ -150,9 +144,9 @@ func readPlayersCSV(filename string) ([]Player, error) {
 		return nil, err
 	}
 
-	var players []Player
+	var players []pubgDAL.Player
 	for _, record := range records {
-		players = append(players, Player{
+		players = append(players, pubgDAL.Player{
 			ID:   record[0],
 			Name: record[1],
 		})
@@ -161,7 +155,7 @@ func readPlayersCSV(filename string) ([]Player, error) {
 	return players, nil
 }
 
-func overwritePlayersCSV(filename string, players []Player) error {
+func overwritePlayersCSV(filename string, players []pubgDAL.Player) error {
 	err := os.MkdirAll(ServersPath, os.ModePerm)
 	if err != nil {
 		return err

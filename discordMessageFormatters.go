@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"pubgstats/pubgDAL"
 	"slices"
 	"strings"
 )
@@ -18,8 +19,7 @@ type EmbedProps struct {
 // takes a statsColumns definition that generates the value of each column,
 // the first column calculated value is used for sorting
 func GenPlayerStatsEmbedDiscordMsg(
-	playerListStats []PlayerStats,
-	Players []Player,
+	playersStats []pubgDAL.PlayerStats,
 	embedProps EmbedProps,
 	statsColumns StatsColumns,
 ) (*discordgo.MessageEmbed, error) {
@@ -32,8 +32,8 @@ func GenPlayerStatsEmbedDiscordMsg(
 		return &discordgo.MessageEmbed{}, errors.New("first stats column is not sortable (missing Float64ValueFunction), cannot generate")
 	}
 
-	slices.SortFunc(playerListStats,
-		func(a, b PlayerStats) int {
+	slices.SortFunc(playersStats,
+		func(a, b pubgDAL.PlayerStats) int {
 			if statsColumns[0].AscOrder {
 				return cmp.Compare(statsColumns[0].Float64ValueFunction(b), statsColumns[0].Float64ValueFunction(a))
 			} else {
@@ -47,9 +47,8 @@ func GenPlayerStatsEmbedDiscordMsg(
 
 	// player name column
 	var playerNameSlice []string
-	for i, player := range playerListStats {
-		playerName, err := FindNameFromId(Players, player.Relationships.Player.Data.ID)
-
+	for i, player := range playersStats {
+		playerName := player.Name
 		switch i {
 		case 0:
 			playerName = "🥇" + playerName
@@ -57,11 +56,6 @@ func GenPlayerStatsEmbedDiscordMsg(
 			playerName = "🥈" + playerName
 		case 2:
 			playerName = "🥉" + playerName
-		}
-
-		if err != nil {
-			fmt.Println(err)
-			return &discordgo.MessageEmbed{}, err
 		}
 		playerNameSlice = append(playerNameSlice, playerName)
 	}
@@ -75,7 +69,7 @@ func GenPlayerStatsEmbedDiscordMsg(
 	// generate all other columns according to definition
 	for i := 0; i < len(statsColumns); i++ {
 		var resultValueSlice []string
-		for _, player := range playerListStats {
+		for _, player := range playersStats {
 			if statsColumns[i].Float64ValueFunction != nil {
 				resultValue := statsColumns[i].Float64ValueFunction(player)
 				resultValueSlice = append(resultValueSlice, fmt.Sprintf(statsColumns[i].Float64StringFormatter, resultValue))
